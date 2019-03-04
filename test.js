@@ -4,9 +4,13 @@ const db = new Database('test_database_owner', 'test_database_name', './test_dat
 
 db.createCollection('test_collection')
 
-db.updateCollectionName('test_collection', 'test_collection_rename')
+db.createDocument('test_collection', {a: 1, b: 2, c: 4}, 'test_document')
 
-// console.log(db.collections)
+db.updateDocument('test_collection', 'test_document', {c: 5, d:4})
+
+db.deleteDocument('test_collection', 'test_document')
+
+db.deleteCollection('test_collection')// console.log(db.collections)
 
 // db.createDocument('test_collection', {row_1: 'item_1', row_2: 'item_2'}, 'document_1')
 
