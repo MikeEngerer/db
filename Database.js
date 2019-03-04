@@ -37,6 +37,12 @@ class Database {
     this.collection_count = file.collection_count;
   }
 
+  readDatabase() {
+    let file = this.readFile()
+    console.log(`\n ======= \n ${this.name} \n\n`, file);
+    return file;
+  }
+
   deleteDatabase() {
     fs.unlinkSync(this.path)
     return console.log(`\n ======= \n ${this.name} deleted \n`);
