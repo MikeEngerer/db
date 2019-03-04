@@ -5,10 +5,10 @@ const moment = require('moment');
 class Database {
 
   constructor(owner, name, path = './database.json') {
-    this.path = path;
     this.owner = owner;
-    this.created_at = moment().format('MMMM Do YYYY, h:mm:ss a');
     this.name = name;
+    this.path = path;
+    this.created_at = moment().format('MMMM Do YYYY, h:mm:ss a');
     this.collection_count = 0;
     fs.existsSync(path) ? this.populate() : this.init();
   }
@@ -29,7 +29,7 @@ class Database {
   }
 
   populate() {
-    let file = JSON.parse(fs.readFileSync(this.path));
+    let file = this.readFile();
     console.log(`\n ======= \n Connected to "${file.name || 'Unnamed Database'}"`);
     this.owner = file.owner;
     this.created_at = file.created_at;
@@ -38,11 +38,11 @@ class Database {
   }
 
   createCollection(name = this.assignName('collection')) {
-    let file = JSON.parse(fs.readFileSync(this.path))
-    // console.log('file read', file)
-    if (file.collections[name]) {
-      return console.log(`\n ******* \n "${name}" already exists \n`)
+    if (this.checkCollectionExists(name)) {
+      return console.log(`\n ******* \n "${name}" already exists \n`);
     }
+    
+    let file = this.readFile();
     file.collections[name] = {
       created_at: moment().format('MMMM Do YYYY, h:mm:ss a'),
       document_count: 0,
@@ -53,31 +53,56 @@ class Database {
     // write to specified collection
     fs.writeFileSync(this.path, JSON.stringify(file, null, 2))
     // log success and echo data inserted
-    console.log(`\n ======= \n ${name} Created \n`);
+    return console.log(`\n ======= \n ${name} Created \n`);
   }
 
   findCollection(name) {
-    let file = JSON.parse(fs.readFileSync(this.path))
-    if (!file.collections[name]) {
-      console.log(`\n ******** \n "${name}" does not exist \n`);
-      return null;
+    if (!this.checkCollectionExists(name)) {
+      return console.log(`\n ******** \n "${name}" does not exist \n`);
     }
 
-    return file.collections[name]
+    let file = this.readFile();
+    return file.collections[name];
+  }
+
+  updateCollectionName(name, newName) {
+    if (!this.checkCollectionExists(name)) {
+      return console.log(`\n ******** \n "${name}" does not exist \n`);
+    } else if (this.checkCollectionExists(newName)) {
+      return console.log(`\n ******* \n "${newName}" already exists \n`);
+    }
+
+    let file = this.readFile();
+    file.collections[newName] = file.collections[name];
+    delete file.collections[name];
+
+    fs.writeFileSync(this.path, JSON.stringify(file, null, 2))
+    return console.log(`\n ======= \n ${name} changed to ${newName} \n`);
+  }
+
+  deleteCollection(name) {
+    if (!this.checkCollectionExists(name)) {
+      return console.log(`\n ******** \n "${name}" does not exist \n`);
+    }
+    let file = this.readFile();
+    delete file.collections[name];
+    file.collection_count--
+    fs.writeFileSync(this.path, JSON.stringify(file, null, 2));
+    return console.log(`\n ======= \n ${name} Deleted \n`);
   }
 
   createDocument(collection, document, name = this.assignName('document', collection)) {
-    let file = JSON.parse(fs.readFileSync(this.path))
-    let { collections } = file
-    if (!collections[collection]) {
-      return console.log(`\n ******* \n "${collection}" does not exist \n`)
+    let file = this.readFile();
+    let { collections } = file;
+    if (!this.checkCollectionExists(collection)) {
+      return console.log(`\n ******* \n "${collection}" does not exist \n`);
     }
     // check if document exists
-    if (collections[collection].documents[name]) {
-      return console.log(`\n ******* \n "${name}" already exists \n`)
+    if (this.checkDocumentExists(collection, name)) {
+      return console.log(`\n ******* \n "${name}" already exists \n`);
     }
     // calc item count in document
-    let item_count = Object.keys(document).length
+    let item_count = Object.keys(document).length;
     // insert document into collection
     collections[collection].documents[name] = { 
       created_at: moment().format('MMMM Do YYYY, h:mm:ss a'),
@@ -85,14 +110,19 @@ class Database {
       items: document
     }
     // increment doc count
-    collections[collection].document_count++
+    collections[collection].document_count++;
     // write out updated file
-    fs.writeFileSync(this.path, JSON.stringify(file, null, 2))
-    return console.log(`\n ======= \n ${name} created \n`)
+    fs.writeFileSync(this.path, JSON.stringify(file, null, 2));
+    return console.log(`\n ======= \n ${name} created \n`);
   }
 
-  findDocument(name) {
-
+  findDocument(collection, name) {
+    let file = JSON.parse(fs.readFileSync(this.path))
+    if (this.checkCollectionExists(collection)) {
+      return file.collections[collection].documents[name] || console.log(`\n ******* \n ${name} does not exist \n`)
+    } else {
+      return console.log(`\n ******* \n "${collection}" does not exist \n`)
+    }
   }
 
   assignName(type, collection) {
@@ -100,12 +130,25 @@ class Database {
       return `${type}_${this.collection_count}`
     }
     if (type === 'document') {
-      let file = JSON.parse(fs.readFileSync(this.path))
+      let file = this.readFile();
       let { document_count } = file.collections[collection]
       return `${type}_${document_count + 1}`
     }
   }
 
+  readFile() {
+    return JSON.parse(fs.readFileSync(this.path))
+  }
+
+  checkCollectionExists(name) {
+    let file = JSON.parse(fs.readFileSync(this.path))
+    return file.collections[name] ? true : false;
+  }
+
+  checkDocumentExists(collection, name) {
+    let file = JSON.parse(fs.readFileSync(this.path))
+    return file.collections[collection].documents[name] ? true : false;
+  }
 }
 
 module.exports = {
