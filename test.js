@@ -10,7 +10,10 @@ db.updateDocument('test_collection', 'test_document', {c: 5, d:4})
 
 db.deleteDocument('test_collection', 'test_document')
 
-db.deleteCollection('test_collection')// console.log(db.collections)
+db.deleteCollection('test_collection')
+
+db.deleteDatabase()
+// console.log(db.collections)
 
 // db.createDocument('test_collection', {row_1: 'item_1', row_2: 'item_2'}, 'document_1')
 

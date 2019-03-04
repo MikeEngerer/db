@@ -37,6 +37,11 @@ class Database {
     this.collection_count = file.collection_count;
   }
 
+  deleteDatabase() {
+    fs.unlinkSync(this.path)
+    return console.log(`\n ======= \n ${this.name} deleted \n`);
+  }
+
   createCollection(name = this.assignName('collection')) {
     if (this.checkCollectionExists(name)) {
       return console.log(`\n ******* \n "${name}" already exists \n`);
@@ -50,7 +55,7 @@ class Database {
     }
     // update counter
     // write to specified collection
-    fs.writeFileSync(this.path, JSON.stringify(file, null, 2))
+    this.writeFile(file)
     this.updateCollectionCount();
     // log success and echo data inserted
     return console.log(`\n ======= \n ${name} Created \n`);
@@ -76,7 +81,7 @@ class Database {
     file.collections[newName] = file.collections[name];
     delete file.collections[name];
 
-    fs.writeFileSync(this.path, JSON.stringify(file, null, 2))
+    this.writeFile(file)
     return console.log(`\n ======= \n ${name} changed to ${newName} \n`);
   }
 
@@ -86,7 +91,7 @@ class Database {
     }
     let file = this.readFile();
     delete file.collections[collection];
-    fs.writeFileSync(this.path, JSON.stringify(file, null, 2));
+    this.writeFile(file);
     this.updateCollectionCount();
     return console.log(`\n ======= \n ${collection} Deleted \n`);
   }
@@ -111,7 +116,7 @@ class Database {
     }
     // increment doc count
     // write out updated file
-    fs.writeFileSync(this.path, JSON.stringify(file, null, 2));
+    this.writeFile(file);
     this.updateDocumentCount(collection);
     return console.log(`\n ======= \n ${name} created \n`);
   }
@@ -137,7 +142,7 @@ class Database {
     Object.assign(items, data);
     file.collections[collection].documents[document].item_count = Object.keys(items).length;
 
-    fs.writeFileSync(this.path, JSON.stringify(file, null, 2))
+    this.writeFile(file)
     return console.log(`\n ======= \n ${document} updated \n`);
   }
 
@@ -151,7 +156,7 @@ class Database {
     let file = this.readFile();
     delete file.collections[collection].documents[document]
 
-    fs.writeFileSync(this.path, JSON.stringify(file, null, 2))
+    this.writeFile(file)
     this.updateDocumentCount(collection);
     return console.log(`\n ======= \n ${document} deleted \n`);
   }
@@ -168,11 +173,15 @@ class Database {
   }
 
   readFile() {
-    return JSON.parse(fs.readFileSync(this.path))
+    return JSON.parse(fs.readFileSync(this.path));
+  }
+
+  writeFile(file) {
+    fs.writeFileSync(this.path, JSON.stringify(file, null, 2))
   }
 
   checkCollectionExists(collection) {
-    let file = JSON.parse(fs.readFileSync(this.path))
+    let file = this.readFile();
     return file.collections[collection] ? true : false;
   }
 
@@ -184,20 +193,20 @@ class Database {
   updateCollectionCount() {
     let file = this.readFile();
     file.collection_count = Object.keys(file.collections).length;
-    fs.writeFileSync(this.path, JSON.stringify(file, null, 2))
+    this.writeFile(file)
   }
 
   updateDocumentCount(collection) {
     let file = this.readFile();
     file.collections[collection].document_count = Object.keys(file.collections[collection].documents).length;
-    fs.writeFileSync(this.path, JSON.stringify(file, null, 2))
+    this.writeFile(file)
   }
 
   updateItemCount(collection, document) {
     let file = this.readFile();
     let items = file.collections[collection].documents[document];
     file.collections[collection].documents[document].item_count = Object.keys(items).length;
-    fs.writeFileSync(this.path, JSON.stringify(file, null, 2))
+    this.writeFile(file)
   }
 }
 
