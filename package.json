@@ -2,13 +2,17 @@
   "name": "db",
   "version": "1.0.0",
   "description": "",
-  "main": "test.js",
+  "main": "Database.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "dbcli": "./bin/cli.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "commander": "^2.19.0",
     "moment": "^2.24.0"
   }
 }
