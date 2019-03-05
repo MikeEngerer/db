@@ -1,16 +1,13 @@
 const { Database } = require('./Database')
 
-const db = new Database('test_database_owner', 'test_database_name', './test_database.json')
+const db = new Database('test_database_owner', 'test_database_name', './test_database_3.json')
 
-db.createCollection('test_collection')
+db.createCollection()
 
-db.createDocument('test_collection', {a: 1, b: 2, c: 4}, 'test_document')
+let coll = db.findCollection('collection_0')
 
-db.updateDocument('test_collection', 'test_document', {c: 5, d:4})
-
-let file = db.readDatabase()
-
-console.log(file.collections.test_collection.documents)
+db.findDocument()
+// console.log(coll)
 // console.log(db.collections)
 
 // db.createDocument('test_collection', {row_1: 'item_1', row_2: 'item_2'}, 'document_1')

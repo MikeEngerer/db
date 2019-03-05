@@ -8,18 +8,17 @@ class Database {
     this.owner = owner;
     this.name = name;
     this.path = path;
-    this.created_at = moment().format('MMMM Do YYYY, h:mm:ss a');
-    this.collection_count = 0;
     fs.existsSync(path) ? this.populate() : this.init();
   }
 
+  // called on new Database instance 
   init() {
     // format metadata for file init
     let data = {
       owner: this.owner,
       name: this.name,
-      created_at: this.created_at,
-      collection_count: this.collection_count,
+      created_at: moment().format('MMMM Do YYYY, h:mm:ss a'),
+      collection_count: 0,
       collections: {}
     }
     // create and insert metadata
@@ -28,54 +27,52 @@ class Database {
     console.log(`\n ======= \n "${this.name || "Unnamed Database"}" initialized \n`);
   }
 
+  // called when path given is an existing db
   populate() {
     let file = this.readFile();
-    console.log(`\n ======= \n Connected to "${file.name || 'Unnamed Database'}"`);
-    this.owner = file.owner;
-    this.created_at = file.created_at;
-    this.name = file.name;
-    this.collection_count = file.collection_count;
+    this.owner = file.owner || 'N/A';
+    this.name = file.name || 'N/A';
+    console.log(`\n ======= \n Connected to "${file.name || 'N/A'}"`);
   }
-
+  // returns entire db object
   readDatabase() {
-    let file = this.readFile()
-    console.log(`\n ======= \n ${this.name} \n\n`, file);
-    return file;
+    return this.readFile();
   }
-
+  // deletes db 
   deleteDatabase() {
     fs.unlinkSync(this.path)
     return console.log(`\n ======= \n ${this.name} deleted \n`);
   }
-
+  // creates collection from given name || assign name from coll_count
   createCollection(name = this.assignName('collection')) {
+    // exits if coll exists
     if (this.checkCollectionExists(name)) {
       return console.log(`\n ******* \n "${name}" already exists \n`);
     }
-
+    // insert collection obj into db
     let file = this.readFile();
     file.collections[name] = {
       created_at: moment().format('MMMM Do YYYY, h:mm:ss a'),
       document_count: 0,
       documents: {}
     }
-    // update counter
-    // write to specified collection
     this.writeFile(file)
     this.updateCollectionCount();
-    // log success and echo data inserted
+    // log success 
     return console.log(`\n ======= \n ${name} Created \n`);
   }
-
+  // if no arg given, returns list of colls in db, otherwise returns coll
   findCollection(collection) {
+    let file = this.readFile();
     if (!this.checkCollectionExists(collection)) {
-      return console.log(`\n ******** \n "${collection}" does not exist \n`);
+      return console.log(`\n ******** \n ${collection ? (collection + " does not exist") : 'Specify collection as argument'} \n`, 
+        'Existing collections: \n', 
+        this.listCollections());
     }
 
-    let file = this.readFile();
     return file.collections[collection];
   }
-
+  // checks if coll/coll new name is exists, renames coll if not
   updateCollectionName(name, newName) {
     if (!this.checkCollectionExists(name)) {
       return console.log(`\n ******** \n "${name}" does not exist \n`);
@@ -90,7 +87,7 @@ class Database {
     this.writeFile(file)
     return console.log(`\n ======= \n ${name} changed to ${newName} \n`);
   }
-
+  // check coll exists, del coll
   deleteCollection(collection) {
     if (!this.checkCollectionExists(collection)) {
       return console.log(`\n ******** \n "${collection}" does not exist \n`);
@@ -101,7 +98,7 @@ class Database {
     this.updateCollectionCount();
     return console.log(`\n ======= \n ${collection} Deleted \n`);
   }
-
+  // takes coll name and document data, inserts as specified name or generated name from doc_count
   createDocument(collection, document, name = this.assignName('document', collection)) {
     let file = this.readFile();
     let { collections } = file;
@@ -126,7 +123,7 @@ class Database {
     this.updateDocumentCount(collection);
     return console.log(`\n ======= \n ${name} created \n`);
   }
-
+  // returns doc obj from given coll and doc name
   findDocument(collection, document) {
     let file = JSON.parse(fs.readFileSync(this.path))
     if (this.checkCollectionExists(collection)) {
@@ -135,7 +132,7 @@ class Database {
       return console.log(`\n ******* \n "${collection}" does not exist \n`)
     }
   }
-
+  // merge given data with existing doc
   updateDocument(collection, document, data) {
     if (!this.checkCollectionExists(collection)) {
       return console.log(`\n ******** \n "${collection}" does not exist \n`);
@@ -151,7 +148,7 @@ class Database {
     this.writeFile(file)
     return console.log(`\n ======= \n ${document} updated \n`);
   }
-
+  // del given doc in given coll
   deleteDocument(collection, document) {
     if (!this.checkCollectionExists(collection)) {
       return console.log(`\n ******** \n "${collection}" does not exist \n`);
@@ -166,53 +163,58 @@ class Database {
     this.updateDocumentCount(collection);
     return console.log(`\n ======= \n ${document} deleted \n`);
   }
-
+  // generate coll or doc name from their respective counts
   assignName(type, collection) {
+    let file = this.readFile();
     if (type === 'collection') {
-      return `${type}_${this.collection_count}`
+      return `${type}_${file.collection_count}`
     }
     if (type === 'document') {
-      let file = this.readFile();
       let { document_count } = file.collections[collection]
       return `${type}_${document_count + 1}`
     }
   }
-
+  // return whole db 
   readFile() {
     return JSON.parse(fs.readFileSync(this.path));
   }
-
+  // write to db file
   writeFile(file) {
     fs.writeFileSync(this.path, JSON.stringify(file, null, 2))
   }
-
+  // returns bool 
   checkCollectionExists(collection) {
     let file = this.readFile();
     return file.collections[collection] ? true : false;
   }
-
+  // returns bool
   checkDocumentExists(collection, document) {
     let file = this.readFile();
     return file.collections[collection].documents[document] ? true : false;
   }
-
+  // gets length of colls and write to db
   updateCollectionCount() {
     let file = this.readFile();
     file.collection_count = Object.keys(file.collections).length;
     this.writeFile(file)
   }
-
+  // gets length of docs in coll and write to db
   updateDocumentCount(collection) {
     let file = this.readFile();
     file.collections[collection].document_count = Object.keys(file.collections[collection].documents).length;
     this.writeFile(file)
   }
-
+  // gets length of items in doc and write to db
   updateItemCount(collection, document) {
     let file = this.readFile();
     let items = file.collections[collection].documents[document];
     file.collections[collection].documents[document].item_count = Object.keys(items).length;
     this.writeFile(file)
+  }
+  // returns list of coll names
+  listCollections() {
+    let file = this.readFile();
+    return Object.keys(file.collections)
   }
 }
 
