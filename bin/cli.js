@@ -2,8 +2,11 @@
 const { Database } = require('../Database.js')
 const program = require('commander');
 const fs = require('fs')
-require('dotenv').config()
-let db = new Database(process.env.DB_NAME, process.env.DB_OWNER, process.env.DB_PATH)
+const config = require('../config.js')
+const meta = fs.existsSync('./meta.json') ? JSON.parse(fs.readFileSync('./meta.json')) : false
+
+
+let db = meta ? new Database(meta.DB_NAME, meta.DB_OWNER, meta.DB_PATH) : new Database(config.DB_NAME, config.DB_OWNER, config.DB_PATH) 
 
 
 program
@@ -16,15 +19,21 @@ program
   })
 
 program
-  .command('connect [path]')
+  .command('connect <path>')
   .action(path => {
-    console.log(`disconnected from ${process.env.DB_OWNER}`)
+    let current = new Database(undefined, undefined, path)
+    let data = {
+      DB_NAME: current.name,
+      DB_OWNER: current.owner,
+      DB_PATH: current.path
+    }
+    console.log(`disconnected from ${config.DB_OWNER}`)
+    fs.writeFileSync('meta.json', JSON.stringify(data, null, 2))
   })
 
 program
   .command('readDatabase')
   .action(() => {
-    db = populate()
     console.log(db.readDatabase())
   })
 
