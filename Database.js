@@ -34,6 +34,14 @@ class Database {
     this.name = file.name || 'N/A';
     console.log(`\n ======= \n Connected to "${file.name || 'N/A'}"`);
   }
+    // return whole db 
+  readFile() {
+    return JSON.parse(fs.readFileSync(this.path));
+  }
+  // write to db file
+  writeFile(file) {
+    fs.writeFileSync(this.path, JSON.stringify(file, null, 2))
+  }
   // returns entire db object
   readDatabase() {
     return this.readFile();
@@ -173,14 +181,6 @@ class Database {
       let { document_count } = file.collections[collection]
       return `${type}_${document_count + 1}`
     }
-  }
-  // return whole db 
-  readFile() {
-    return JSON.parse(fs.readFileSync(this.path));
-  }
-  // write to db file
-  writeFile(file) {
-    fs.writeFileSync(this.path, JSON.stringify(file, null, 2))
   }
   // returns bool 
   checkCollectionExists(collection) {
