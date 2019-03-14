@@ -2,8 +2,9 @@
 const { Database } = require('../Database.js')
 const program = require('commander');
 const fs = require('fs')
+require('dotenv').config()
+let db = new Database(process.env.DB_NAME, process.env.DB_OWNER, process.env.DB_PATH)
 
-let db;
 
 program
   .version('0.1.0')
@@ -11,20 +12,15 @@ program
 program
   .command('createDatabase [owner] [name] [path]')
   .action((name, owner, path) => {
-    db = new Database(owner, name, path)
-    data = {
-      owner,
-      name,
-      path
-    }
-    fs.writeFileSync('./meta.json', JSON.stringify(data))
+    db.createDatabase(name, owner, path)
   })
 
 program
   .command('connect [path]')
   .action(path => {
-    db = new Database(path)
+    console.log(`disconnected from ${process.env.DB_OWNER}`)
   })
+
 program
   .command('readDatabase')
   .action(() => {
@@ -67,6 +63,6 @@ program.parse(process.argv);
 
 function populate() {
     let file = JSON.parse(fs.readFileSync('./meta.json'))
-    return new Database(file.path)
+    return new Database(file.name, file.owner, file.path)
 }
 // console.log('collection created');
